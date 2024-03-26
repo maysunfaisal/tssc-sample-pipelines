@@ -43,7 +43,7 @@ spec:
             echo "https://${username}:${password})@${hostname}" > "${HOME}/.git-credentials"
             origin_with_auth=https://${username}:${password}@${remote_without_protocol}.git
           else
-            origin_with_auth=https://${password}@${remote_without_protocol}.git
+            origin_with_auth=https://test:${password}@${remote_without_protocol}
           fi
         else
           echo "git credentials to push into gitops repository ${PARAM_GITOPS_REPO_URL} is not configured."
@@ -56,7 +56,9 @@ spec:
         git config --global user.email "rhtap@noreplay.com"
         git config --global user.name "gitops-update"
 
-        git clone ${PARAM_GITOPS_REPO_URL}
+        echo "printing ..."
+
+        git clone ${origin_with_auth}
         gitops_repo_name=$(basename ${gitops_repo_url})
         cd ${gitops_repo_name}
 
