@@ -43,7 +43,7 @@ spec:
             echo "https://${username}:${password})@${hostname}" > "${HOME}/.git-credentials"
             origin_with_auth=https://${username}:${password}@${remote_without_protocol}.git
           else
-            origin_with_auth=https://test:${password}@${remote_without_protocol}
+            origin_with_auth=https://test:${password}@${remote_without_protocol}.git
           fi
         else
           echo "git credentials to push into gitops repository ${PARAM_GITOPS_REPO_URL} is not configured."

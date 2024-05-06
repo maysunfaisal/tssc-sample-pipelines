@@ -189,6 +189,8 @@ spec:
           value: $(params.git-url)-gitops
         - name: insecure-skip-tls-verify
           value: "true"
+        - name: gitops-auth-secret-name
+          value: $(params.gitops-auth-secret-name)
       runAfter:
         - update-deployment
       taskRef:

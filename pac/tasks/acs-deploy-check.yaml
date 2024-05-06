@@ -30,12 +30,21 @@ spec:
       default: 'false'
       description: |
         When set to `"true"`, skip verifying the TLS certs of the Central endpoint. Defaults to `"false"`.
+    - name: gitops-auth-secret-name
+      type: string
+      default: gitops-auth-secret
+      description: |
+        Secret of basic-auth type containing credentials to commit into gitops repository.
   volumes:
     - name: repository
       emptyDir: {}
     - name: rox-secret
       secret:
         secretName: $(params.rox-secret-name)
+        optional: true
+    - name: gitops-auth-secret
+      secret:
+        secretName: $(params.gitops-auth-secret-name)
         optional: true
   steps:
     - name: annotate-task
@@ -55,6 +64,8 @@ spec:
           mountPath: /workspace/repository
         - name: rox-secret
           mountPath: /rox-secret
+        - name: gitops-auth-secret
+          mountPath: /gitops-auth-secret
       workingDir: /workspace/repository
       env:
         - name: PARAM_INSECURE_SKIP_TLS_VERIFY
@@ -86,8 +97,26 @@ spec:
         echo "Using rox central endpoint ${ROX_CENTRAL_ENDPOINT}"
 
         # Clone gitops repository
+        if test -f /gitops-auth-secret/password ; then
+          gitops_repo_url=${PARAM_GITOPS_REPO_URL%'.git'}
+          remote_without_protocol=${gitops_repo_url#'https://'}
+
+          password=$(cat /gitops-auth-secret/password)
+          if test -f /gitops-auth-secret/username ; then
+            username=$(cat /gitops-auth-secret/username)
+            echo "https://${username}:${password})@${hostname}" > "${HOME}/.git-credentials"
+            origin_with_auth=https://${username}:${password}@${remote_without_protocol}.git
+          else
+            origin_with_auth=https://test:${password}@${remote_without_protocol}
+          fi
+        else
+          echo "git credentials to clone the gitops repository ${PARAM_GITOPS_REPO_URL} is not configured."
+          echo "TODO: configure git credentials to clone gitops repository and run acs deploy check."
+          exit 0
+        fi
+
         echo "Using gitops repository: ${PARAM_GITOPS_REPO_URL}"
-        git clone "${PARAM_GITOPS_REPO_URL}" --single-branch --depth 1 gitops
+        git clone ${origin_with_auth} --single-branch --depth 1 gitops
         cd gitops
         echo "List of files in gitops repository root:"
         ls -al
